@@ -7,40 +7,38 @@
         <meta name="mobile-web-app-capable" content="yes">
         <meta name="apple-mobile-web-app-capable" content="yes">
         <link rel="stylesheet" href="css/leaflet.css">
-        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
         <link rel="stylesheet" href="css/qgis2web.css">
         <link rel="stylesheet" href="css/fontawesome-all.min.css">
         <link rel="stylesheet" href="css/leaflet.photon.css">
         <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css">
         <style>
-        #logo {
-    position: absolute;
-    bottom: 10px;
-    left: 10px;
-    z-index: 1000;
+        #logos {
+    margin-top: 10px;
+    text-align: left;
 }
-#logo2 {
-    position: absolute;
-    bottom: 10px;
-    left: 150px;  
-    z-index: 1000;
+#logos img {
+    margin-right: 20px;
+    vertical-align: middle;
 }
         #map {
-            width: 1468px;
-            height: 882px;
+            width: 900px;
+            height: 750px;
         }
         </style>
         <title></title>
     </head>
     <body>
-        <img id="logo" src="DElogo.png" width="120">
-        <img id="logo2" src="EBElogo.png" width="40">
-        <div id="map">
-        </div>
+                <div id="map-container">
+    <div id="map"></div>
+</div>
+
+<div id="logos">
+    <img src="DElogo.png" width="120">
+    <img src="EBElogo.png" width="40">
+</div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
-        <script src="js/L.Control.Layers.Tree.min.js"></script>
         <script src="js/leaflet.rotatedMarker.js"></script>
         <script src="js/leaflet.pattern.js"></script>
         <script src="js/leaflet-hash.js"></script>
@@ -427,30 +425,38 @@ fetch('data/schools.geojson')
     layer_NI_schools_master = L.geoJSON(data, {
         onEachFeature: pop_NI_schools_master_3,
         pointToLayer: function (feature, latlng) {
-            feature.properties['School Name'] = feature.properties['School Name'].trim();
-            var value = feature.properties['Number of registrations'];
-var status = feature.properties['Joined SOLCE?'];
 
-var colour;
+    feature.properties['School Name'] = feature.properties['School Name'].trim();
 
-if (status === 'YES') {
-    colour = '#ca2c92';   // pink
-} else if (status === 'NO') {
-    colour = '#ffffff';   // white
-} else if (status === 'WITHDRAWN') {
-    colour = '#322261';   // dark purple
-} else {
-    colour = '#1155d2';   // fallback blue
+    var registrations = Number(feature.properties['Number of registrations']) || 0;
+    var status = feature.properties['Joined SOLCE?'];
+
+    var colour;
+
+    if (status === 'YES') {
+        colour = '#ca2c92';
+    } else if (status === 'NO') {
+        colour = '#ffffff';
+    } else if (status === 'WITHDRAWN') {
+        colour = '#322261';
+    } else {
+        colour = '#1155d2';
+    }
+
+    var radius = Math.sqrt(registrations) * 3 + 3;
+
+    if (registrations <= 1) {
+        radius = 8;
+    }
+
+    return L.circleMarker(latlng, {
+        radius: radius,
+        fillColor: colour,
+        color: "#000",
+        weight: 1,
+        fillOpacity: 0.8
+    });
 }
-
-return L.circleMarker(latlng, {
-    radius: Math.max(5, value * 0.6),
-    fillColor: colour,
-    color: "#000",
-    weight: 1,
-    fillOpacity: 0.8
-});
-        }
     });
 
     map.addLayer(layer_NI_schools_master);
@@ -511,14 +517,28 @@ legend.onAdd = function (map) {
     div.innerHTML +=
         '<i style="background:#322261;width:10px;height:10px;display:inline-block;"></i> WITHDRAWN<br>';
 
-    div.innerHTML += '<br><strong>Circle size</strong><br>';
-    div.innerHTML += 'Bigger = more registrations';
+div.innerHTML += '<br><strong>Registrations</strong><br>';
+
+function getSize(v) {
+    return Math.sqrt(v) * 3 + 3;
+}
+
+var sizes = [1, 5, 10, 20];
+
+sizes.forEach(function(s) {
+    var size = getSize(s);
+    div.innerHTML +=
+        '<div style="display:flex; align-items:center; margin-bottom:5px;">' +
+        '<div style="width:' + (size*2) + 'px; height:' + (size*2) + 'px; border-radius:50%; background:#ca2c92; opacity:0.7; margin-right:8px; border:1px solid #000;"></div>' +
+        s + 
+        '</div>';
+});
 
     return div;
 };
 
 legend.addTo(map);
 
-        </script>
-    </body>
+</script>
+</body>
 </html>

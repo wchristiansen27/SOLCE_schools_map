@@ -13,6 +13,27 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
         <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css">
         <style>
+        #map-title {
+    width: 70%;
+    margin-bottom: 10px;
+}
+
+#map-title h2 {
+    font-family: 'Arial', Tahoma, sans-serif;
+    font-size: 20px;
+    margin: 0;
+}
+
+#map-title p {
+    font-family: 'Arial', Tahoma, sans-serif;
+    font-size: 14px;
+    margin: 5px 0 10px 0;
+    color: #555;
+}
+        #filters {
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
         #logos {
     margin-top: 10px;
     text-align: left;
@@ -22,20 +43,39 @@
     vertical-align: middle;
 }
         #map {
-            width: 70%;
+            width: 75%;
             height: 800px;
         }
         </style>
         <title></title>
     </head>
     <body>
-                <div id="map-container">
-    <div id="map"></div>
-</div>
+                <div id="map-wrapper">
+<div id="map-wrapper">
 
-<div id="logos">
-    <img src="DElogo.png" width="120">
-    <img src="EBElogo.png" width="40">
+    <div id="map-title">
+        <h2>Science of Learning for Classroom Excellence Programme</h2>
+        <p>This map shows schools by SOLCE participation status and number of registrations. Use the filter to view different school cohorts. The data is correct as of April 2026.</p>
+    </div>
+
+      <div id="filters">
+        <strong>School cohort:</strong>
+        <select id="cohortFilter">
+            <option value="ALL">All</option>
+            <option value="1st">1st</option>
+            <option value="2nd">2nd</option>
+            <option value="Other (authorised)">Other (authorised)</option>
+            <option value="Other (unauthorised)">Other (unauthorised)</option>
+        </select>
+    </div>
+
+    <div id="map"></div>
+
+    <div id="logos">
+        <img src="DElogo.png" width="120">
+        <img src="EBElogo.png" width="40">
+    </div>
+
 </div>
         <script src="js/qgis2web_expressions.js"></script>
         <script src="js/leaflet.js"></script>
@@ -73,6 +113,7 @@
             zoomControl:false, maxZoom:28, minZoom:1
         })
         var layer_NI_schools_master;
+        var searchControl;
         var hash = new L.Hash(map);
         map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
         var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
@@ -419,6 +460,7 @@ fetch('data/schools.geojson')
   .then(response => response.json())
   .then(data => {
 
+    var allData = data; 
     console.log("Data loaded", data);
      console.log(data.features[0].properties); 
 
@@ -461,7 +503,7 @@ fetch('data/schools.geojson')
 
     map.addLayer(layer_NI_schools_master);
     map.fitBounds(layer_NI_schools_master.getBounds());
-var searchControl = new L.Control.Search({
+searchControl = new L.Control.Search({
     layer: layer_NI_schools_master,
     propertyName: 'School Name',
     zoom: 14,
@@ -470,7 +512,70 @@ var searchControl = new L.Control.Search({
 });
 
 map.addControl(searchControl);
-  })
+
+map.addControl(searchControl);
+document.getElementById("cohortFilter").addEventListener("change", function () {
+
+    var selected = this.value;
+
+    map.removeLayer(layer_NI_schools_master);
+
+       layer_NI_schools_master = L.geoJSON(allData, {
+
+        filter: function(feature) {
+            var cohort = feature.properties['School cohort / classification'];
+            return selected === "ALL" || cohort.trim() === selected;
+        },
+
+        onEachFeature: pop_NI_schools_master_3,
+
+        pointToLayer: function (feature, latlng) {
+
+            var registrations = Number(feature.properties['Number of registrations']) || 0;
+            var status = feature.properties['Joined SOLCE?'];
+
+            var colour;
+
+            if (status === 'YES') {
+                colour = '#ca2c92';
+            } else if (status === 'NO') {
+                colour = '#ffffff';
+            } else if (status === 'WITHDRAWN') {
+                colour = '#322261';
+            } else {
+                colour = '#1155d2';
+            }
+
+            var radius = Math.sqrt(registrations) * 3 + 3;
+
+            if (registrations <= 1) {
+                radius = 8;
+            }
+
+            return L.circleMarker(latlng, {
+                radius: radius,
+                fillColor: colour,
+                color: "#000",
+                weight: 1,
+                fillOpacity: 0.8
+            });
+        }
+    });
+
+    map.addLayer(layer_NI_schools_master);
+map.removeControl(searchControl);
+
+searchControl = new L.Control.Search({
+    layer: layer_NI_schools_master,
+    propertyName: 'School Name',
+    zoom: 14,
+    initial: false,
+    marker: false
+});
+
+map.addControl(searchControl);
+});
+})
   .catch(error => console.error("Error loading GeoJSON:", error));
 
         var i = 0;

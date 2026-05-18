@@ -14,7 +14,7 @@
         <link rel="stylesheet" href="https://unpkg.com/leaflet-search@3.0.9/dist/leaflet-search.min.css">
         <style>
         #map-title {
-    width: 70%;
+    width: 75%;
     margin-bottom: 10px;
 }
 
@@ -51,11 +51,9 @@
     </head>
     <body>
                 <div id="map-wrapper">
-<div id="map-wrapper">
-
     <div id="map-title">
         <h2>Science of Learning for Classroom Excellence Programme</h2>
-        <p>This map shows schools by SOLCE participation status and number of registrations. Use the filter to view different school cohorts. The data is correct as of April 2026.</p>
+        <p>This map shows schools by SOLCE participation status and number of registrations. Use the filter to view different school cohorts. The data is correct as of 18 May 2026.</p>
     </div>
 
       <div id="filters">
@@ -456,7 +454,7 @@
         map.createPane('pane_NI_schools_master_3');
         map.getPane('pane_NI_schools_master_3').style.zIndex = 403;
         map.getPane('pane_NI_schools_master_3').style['mix-blend-mode'] = 'normal';
-fetch('data/schools220426.geojson')
+fetch('data/schools.geojson')
   .then(response => response.json())
   .then(data => {
 
